@@ -1,34 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Colorful Guessing Game</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+      background: linear-gradient(90deg, #f6d365 0%, #fda085 100%);
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
       margin: 0;
     }
 
-    .game-container {
+    .game-container, .leaderboard-container {
       background: white;
       padding: 30px 40px;
-      margin: 50px;
+      margin: 30px;
       border-radius: 20px;
       box-shadow: 0 10px 20px rgba(0,0,0,0.2);
       text-align: center;
       animation: fadeIn 1s ease-in-out;
-      width: 100%;
-      height: 100%;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
+      width: 90%;
+      max-width: 1000px;
     }
 
     h2 {
@@ -36,18 +31,19 @@
       margin-bottom: 20px;
     }
 
-    input[type="number"] {
+    input[type="number"], input[type="text"] {
       padding: 10px;
       font-size: 16px;
       width: 180px;
       border: 2px solid #fda085;
       border-radius: 8px;
+      margin: 5px 0;
     }
 
     button {
       padding: 10px 20px;
       font-size: 16px;
-      margin-left: 10px;
+      margin-top: 10px;
       cursor: pointer;
       background: #ff7675;
       color: white;
@@ -81,30 +77,78 @@
     .hint {
       color: #2d3436;
     }
+
+    .leaderboard-container h3 {
+      margin-bottom: 15px;
+      color: #444;
+    }
+
+    .leaderboard-list {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .leaderboard-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #eee;
+      color: #333;
+    }
+
+    #playAgainBtn {
+      display: none;
+      margin-top: 20px;
+      background-color: #00b894;
+    }
+
+    #playAgainBtn:hover {
+      background-color: #019875;
+    }
   </style>
 </head>
 <body>
 
   <div class="game-container">
     <h2>🎯 Guess the Number (1–100)</h2>
-    <input type="number" id="guessInput" min="1" max="100" placeholder="Your guess">
+    <input type="text" id="nameInput" placeholder="Your name" />
+    <br />
+    <input type="number" id="guessInput" min="1" max="100" placeholder="Your guess" />
+    <br />
     <button onclick="checkGuess()">Guess</button>
     <div class="message" id="message"></div>
     <div class="tries" id="triesCount">Attempts: 0</div>
+    <button id="playAgainBtn" onclick="playAgain()">🔁 Play Again</button>
+  </div>
+
+  <div class="leaderboard-container">
+    <h3>🏆 Leaderboard</h3>
+    <ul class="leaderboard-list" id="leaderboardList"></ul>
   </div>
 
   <script>
-    const randomNumber = Math.floor(Math.random() * 100) + 1;
+    let randomNumber = Math.floor(Math.random() * 100) + 1;
     let attempts = 0;
+    let gameOver = false;
+    const leaderboard = [];
+
     const message = document.getElementById("message");
     const triesDisplay = document.getElementById("triesCount");
+    const leaderboardList = document.getElementById("leaderboardList");
+    const playAgainBtn = document.getElementById("playAgainBtn");
 
     function checkGuess() {
+      if (gameOver) return;
+
+      const name = document.getElementById("nameInput").value.trim();
       const input = document.getElementById("guessInput");
       const guess = Number(input.value);
 
+      if (!name) {
+        message.innerHTML = "<span class='hint'>❗ Please enter your name first.</span>";
+        return;
+      }
+
       if (!guess || guess < 1 || guess > 100) {
-        message.innerHTML = "<span class='hint'>❗ Please enter a number between 1 and 100.</span>";
+        message.innerHTML = "<span class='hint'>❗ Enter a number between 1 and 100.</span>";
         return;
       }
 
@@ -112,8 +156,15 @@
       triesDisplay.textContent = `Attempts: ${attempts}`;
 
       if (guess === randomNumber) {
-        message.innerHTML = "<span class='correct'>🎉 Correct! You guessed the number!</span>";
-        input.disabled = true;
+        message.innerHTML = `<span class='correct'>🎉 Correct, ${name}! You guessed it in ${attempts} tries!</span>`;
+        document.getElementById("guessInput").disabled = true;
+        document.getElementById("nameInput").disabled = true;
+        gameOver = true;
+        playAgainBtn.style.display = "inline-block";
+
+        leaderboard.push({ name, tries: attempts });
+        leaderboard.sort((a, b) => a.tries - b.tries);
+        renderLeaderboard();
       } else if (guess < randomNumber) {
         message.innerHTML = "<span class='hint'>🔺 Go higher!</span>";
       } else {
@@ -122,6 +173,28 @@
 
       input.value = "";
       input.focus();
+    }
+
+    function renderLeaderboard() {
+      leaderboardList.innerHTML = "";
+      leaderboard.forEach(entry => {
+        const li = document.createElement("li");
+        li.textContent = `${entry.name} - ${entry.tries} tries`;
+        leaderboardList.appendChild(li);
+      });
+    }
+
+    function playAgain() {
+      randomNumber = Math.floor(Math.random() * 100) + 1;
+      attempts = 0;
+      gameOver = false;
+      document.getElementById("guessInput").disabled = false;
+      document.getElementById("nameInput").disabled = false;
+      document.getElementById("guessInput").value = "";
+      document.getElementById("nameInput").value = "";
+      message.innerHTML = "";
+      triesDisplay.textContent = "Attempts: 0";
+      playAgainBtn.style.display = "none";
     }
   </script>
 
